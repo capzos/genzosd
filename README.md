@@ -1,1 +1,1 @@
-# genzosd
+# genzos
