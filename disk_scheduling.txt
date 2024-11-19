@@ -1,0 +1,182 @@
+/*Write a program for Disk Scheduling Algorithms: SSTF, SCAN, C-Look considering the
+initial head position moving away from the spindle*/
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <limits.h>
+
+#define MAX 100  // Maximum number of disk requests
+
+void SSTF(int requests[], int n, int head);
+void SCAN(int requests[], int n, int head, int disk_size);
+void CLOOK(int requests[], int n, int head);
+
+int compare(const void *a, const void *b) {
+    return (*(int *)a - *(int *)b);
+}
+
+int main() {
+    int n, head, disk_size, choice;
+    int requests[MAX];
+
+    // Input the number of disk requests
+    printf("Enter the number of disk requests: ");
+    scanf("%d", &n);
+
+    if (n <= 0) {
+        printf("Invalid number of requests. Exiting.\n");
+        return 1;
+    }
+
+    // Input the requests
+    printf("Enter the requests (0 to disk size - 1):\n");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &requests[i]);
+    }
+
+    // Input the total disk size
+    printf("Enter the total disk size: ");
+    scanf("%d", &disk_size);
+
+    // Validate requests
+    for (int i = 0; i < n; i++) {
+        if (requests[i] < 0 || requests[i] >= disk_size) {
+            printf("Error: Request %d is out of bounds. Valid range: 0 to %d\n", requests[i], disk_size - 1);
+            return 1;  // Exit if any request is invalid
+        }
+    }
+
+    // Input initial head position
+    printf("Enter the initial head position: ");
+    scanf("%d", &head);
+
+    if (head < 0 || head >= disk_size) {
+        printf("Invalid head position. Exiting.\n");
+        return 1;
+    }
+
+    // Menu for choosing the algorithm
+    printf("\nSelect a Disk Scheduling Algorithm:\n");
+    printf("1. SSTF\n2. SCAN\n3. C-LOOK\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+
+    // Execute the selected algorithm
+    switch (choice) {
+        case 1:
+            SSTF(requests, n, head);
+            break;
+        case 2:
+            SCAN(requests, n, head, disk_size);
+            break;
+        case 3:
+            CLOOK(requests, n, head);
+            break;
+        default:
+            printf("Invalid choice! Exiting.\n");
+            return 1;
+    }
+
+    return 0;
+}
+
+// SSTF (Shortest Seek Time First) Algorithm
+void SSTF(int requests[], int n, int head) {
+    int total_movement = 0, completed = 0, min_index;
+    int visited[MAX] = {0};  // To track visited requests
+
+    printf("\nSSTF Disk Scheduling:\n");
+
+    while (completed < n) {
+        int min_distance = INT_MAX;
+
+        // Find the closest unvisited request
+        for (int i = 0; i < n; i++) {
+            if (!visited[i]) {
+                int distance = abs(requests[i] - head);
+                if (distance < min_distance) { 
+                    min_distance = distance;
+                    min_index = i;
+                }
+            }
+        }
+
+        visited[min_index] = 1;
+        total_movement += min_distance;
+        head = requests[min_index];
+        completed++;
+
+        printf("Moved to: %d\n", head);
+    }
+
+    printf("Total head movement: %d\n", total_movement);
+}
+
+// SCAN Algorithm (Elevator Algorithm)
+void SCAN(int requests[], int n, int head, int disk_size) {
+    int total_movement = 0;
+    qsort(requests, n, sizeof(int), compare);  // Sort the requests
+
+    printf("\nSCAN Disk Scheduling:\n");
+
+    // Move towards the end of the disk (away from the spindle)
+    for (int i = 0; i < n; i++) {
+        if (requests[i] >= head) {
+            for (int j = i; j < n; j++) {
+                total_movement += abs(requests[j] - head);
+                head = requests[j];
+                printf("Moved to: %d\n", head);
+            }
+            total_movement += abs(disk_size - 1 - head);  // Move to end
+            printf("Moved to: %d (End of Disk)\n", disk_size - 1);
+            head = disk_size - 1;
+            break;
+        }
+    }
+
+    // Move back towards the beginning
+    for (int i = n - 1; i >= 0; i--) {
+         
+            total_movement += abs(requests[i] - head);
+            head = requests[i];
+            printf("Moved to: %d\n", head);
+          
+    }
+
+    printf("Total head movement: %d\n", total_movement);
+}
+void CLOOK(int requests[], int n, int head) {
+    int total_movement = 0;
+    qsort(requests, n, sizeof(int), compare);  // Sort the requests
+
+    printf("\nC-LOOK Disk Scheduling:\n");
+
+    // Move towards the end of the disk (only to the largest request)
+    int i = 0;  // Track the starting index for unvisited requests
+    for (i = 0; i < n; i++) {
+        if (requests[i] >= head) {
+            for (int j = i; j < n; j++) {
+                total_movement += abs(requests[j] - head);
+                head = requests[j];
+                printf("Moved to: %d\n", head);
+            }
+            break;
+        }
+    }
+
+    // Jump back to the smallest request
+    if (i < n) {  // Ensure there are remaining requests
+        total_movement += abs(head - requests[0]);
+        head = requests[0];
+        printf("Jumped to: %d\n", head);
+    }
+
+    // Continue serving the remaining requests (left of the initial head position)
+    for (int j = 0; j < i; j++) {  // Only serve requests left of the initial range
+        total_movement += abs(requests[j] - head);
+        head = requests[j];
+        printf("Moved to: %d\n", head);
+    }
+
+    printf("Total head movement: %d\n", total_movement);
+}

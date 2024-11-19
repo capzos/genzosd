@@ -1,0 +1,92 @@
+Priority Scheduling(preemtive)
+#include <stdio.h>
+
+typedef struct {
+    int pid;             // Process ID
+    int arrivalTime;     // Arrival time
+    int burstTime;       // Burst time
+    int remainingTime;   // Remaining burst time
+    int priority;        // Priority (lower number = higher priority)
+    int completionTime;  // Completion time
+    int waitingTime;     // Waiting time
+    int turnaroundTime;  // Turnaround time
+} Process;
+
+void preemptivePriorityScheduling(Process processes[], int n) {
+    int currentTime = 0;    // Current time
+    int completed = 0;      // Number of completed processes
+
+    // Initialize remaining time
+    for (int i = 0; i < n; i++) {
+        processes[i].remainingTime = processes[i].burstTime;
+    }
+
+    while (completed < n) {
+        int minPriorityIndex = -1;
+        int minPriority = 9999;  // Large value for comparison
+
+        // Find the process with the highest priority
+        for (int i = 0; i < n; i++) {
+            if (processes[i].arrivalTime <= currentTime &&
+                processes[i].remainingTime > 0 &&
+                processes[i].priority < minPriority) {
+                minPriority = processes[i].priority;
+                minPriorityIndex = i;
+            }
+        }
+
+        if (minPriorityIndex == -1) {
+            // No process ready to execute, increment time
+            currentTime++;
+            continue;
+        }
+
+        // Execute the selected process for 1 unit of time
+        processes[minPriorityIndex].remainingTime--;
+        currentTime++;
+
+        // If the process is completed
+        if (processes[minPriorityIndex].remainingTime == 0) {
+            completed++;
+            processes[minPriorityIndex].completionTime = currentTime;
+            processes[minPriorityIndex].turnaroundTime = 
+                processes[minPriorityIndex].completionTime - processes[minPriorityIndex].arrivalTime;
+            processes[minPriorityIndex].waitingTime = 
+                processes[minPriorityIndex].turnaroundTime - processes[minPriorityIndex].burstTime;
+        }
+    }
+}
+
+void displayProcesses(Process processes[], int n) {
+    printf("PID\tAT\tBT\tPR\tCT\tWT\tTAT\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+               processes[i].pid,
+               processes[i].arrivalTime,
+               processes[i].burstTime,
+               processes[i].priority,
+               processes[i].completionTime,
+               processes[i].waitingTime,
+               processes[i].turnaroundTime);
+    }
+}
+
+int main() {
+    int n;
+
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+
+    Process processes[n];
+
+    for (int i = 0; i < n; i++) {
+        processes[i].pid = i + 1;
+        printf("Enter arrival time, burst time, and priority for process %d: ", i + 1);
+        scanf("%d %d %d", &processes[i].arrivalTime, &processes[i].burstTime, &processes[i].priority);
+    }
+
+    preemptivePriorityScheduling(processes, n);
+    displayProcesses(processes, n);
+
+    return 0;
+}

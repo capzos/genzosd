@@ -1,0 +1,96 @@
+SJF(PREEMPTIVE)
+#include <stdio.h>
+
+typedef struct {
+    int pid;               // Process ID
+    int arrivalTime;       // Arrival time
+    int burstTime;         // Burst time
+    int remainingTime;     // Remaining burst time (for preemption)
+    int completionTime;    // Completion time
+    int waitingTime;       // Waiting time
+    int turnaroundTime;    // Turnaround time
+} Process;
+
+// Function to calculate Preemptive SJF (Shortest Job First) Scheduling
+void preemptiveSJF(Process processes[], int n) {
+    int completed = 0;
+    int currentTime = 0;
+    int minBurstTimeIndex;// Stores the index of the process with the shortest burst time at each step.
+    int visited[n];  // Array to keep track of visited processes
+
+    for (int i = 0; i < n; i++) {
+        visited[i] = 0;  // Initialize all processes as unvisited
+        processes[i].remainingTime = processes[i].burstTime;  // Set remaining burst time initially as burst time
+    }
+
+    while (completed < n) {
+        // Find the process with the minimum remaining burst time that hasn't been completed yet
+        minBurstTimeIndex = -1;
+        int minRemainingTime = 999999;  // Arbitrary large value to find the minimum
+
+        for (int i = 0; i < n; i++) {
+            if (!visited[i] && processes[i].arrivalTime <= currentTime && processes[i].remainingTime < minRemainingTime) {
+                minRemainingTime = processes[i].remainingTime;
+                minBurstTimeIndex = i;
+            }
+        }
+
+        // If no process can be executed (i.e., the current time is before any process arrival), increment the time
+        if (minBurstTimeIndex == -1) {
+            currentTime++;
+            continue;
+        }
+
+        // Execute the selected process for one unit of time (preemptive)
+        processes[minBurstTimeIndex].remainingTime--;
+        currentTime++;
+
+        // If the process is completed, update its details
+        if (processes[minBurstTimeIndex].remainingTime == 0) {
+            visited[minBurstTimeIndex] = 1;  // Mark the process as completed
+            processes[minBurstTimeIndex].completionTime = currentTime;
+            processes[minBurstTimeIndex].turnaroundTime = processes[minBurstTimeIndex].completionTime - processes[minBurstTimeIndex].arrivalTime;
+            processes[minBurstTimeIndex].waitingTime = processes[minBurstTimeIndex].turnaroundTime - processes[minBurstTimeIndex].burstTime;
+            completed++;
+        }
+    }
+}
+
+// Function to display process information
+void displayProcesses(Process processes[], int n) {
+    printf("PID\tAT\tBT\tCT\tWT\tTAT\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t%d\t%d\t%d\t%d\n",
+               processes[i].pid,
+               processes[i].arrivalTime,
+               processes[i].burstTime,
+               processes[i].completionTime,
+               processes[i].waitingTime,
+               processes[i].turnaroundTime);
+    }
+}
+
+int main() {
+    int n;
+
+    // User input for number of processes
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+
+    Process processes[n];
+
+    // User input for each process's arrival time and burst time
+    for (int i = 0; i < n; i++) {
+        processes[i].pid = i + 1;
+        printf("Enter arrival time and burst time for process %d: ", i + 1);
+        scanf("%d %d", &processes[i].arrivalTime, &processes[i].burstTime);
+    }
+
+    // Call Preemptive SJF Scheduling function
+    preemptiveSJF(processes, n);
+
+    // Display the process details after scheduling
+    displayProcesses(processes, n);
+
+    return 0;
+}

@@ -1,0 +1,69 @@
+//Reader writer cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <semaphore.h>
+#include <chrono>
+
+std::mutex rw_mutex;       // To lock readCount
+std::mutex readWriteLock;  // To lock resource access (writers' lock)
+int readCount = 0;         // Reader counter
+
+void reader(int id) {
+    while (true) {
+        // Lock to safely update readCount
+        rw_mutex.lock();
+        readCount++;
+        if (readCount == 1) {
+            readWriteLock.lock();  // First reader locks the resource
+        }
+        rw_mutex.unlock();
+
+        // Reading section
+        std::cout << "Reader " << id << " is reading...\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+        // Lock to safely update readCount
+        rw_mutex.lock();
+        readCount--;
+        if (readCount == 0) {
+            readWriteLock.unlock();  // Last reader unlocks the resource
+        }
+        rw_mutex.unlock();
+
+        // Simulate time before the next read
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
+}
+
+void writer(int id) {
+    while (true) {
+        readWriteLock.lock();  // Writer locks the resource
+
+        // Writing section
+        std::cout << "Writer " << id << " is writing...\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+
+        readWriteLock.unlock();  // Writer unlocks the resource
+
+        // Simulate time before the next write
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    }
+}
+
+int main() {
+    // Create threads for readers and writers
+    std::thread r1(reader, 1);
+    std::thread r2(reader, 2);
+    std::thread w1(writer, 1);
+    std::thread w2(writer, 2);
+
+    // Let the threads run
+    r1.join();
+    r2.join();
+    w1.join();
+    w2.join();
+
+    return 0;
+}
+

@@ -1,0 +1,99 @@
+Priority Scheduling(Non – preemptive)
+#include <stdio.h>
+
+typedef struct {
+    int pid;               // Process ID
+    int arrivalTime;       // Arrival time
+    int burstTime;         // Burst time
+    int priority;          // Priority (lower number = higher priority)
+    int completionTime;    // Completion time
+    int waitingTime;       // Waiting time
+    int turnaroundTime;    // Turnaround time
+} Process;
+
+// Function to sort processes based on priority and arrival time
+void sortProcessesByPriority(Process processes[], int n, int currentTime) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            // Sort by priority first, then by arrival time if priorities are equal
+            if ((processes[j].priority < processes[i].priority && processes[j].arrivalTime <= currentTime) ||
+                (processes[j].priority == processes[i].priority &&
+                 processes[j].arrivalTime < processes[i].arrivalTime)) {
+                Process temp = processes[i];
+                processes[i] = processes[j];
+                processes[j] = temp;
+            }
+        }
+    }
+}
+
+// Function for Priority Scheduling (Non-Preemptive)
+void priorityScheduling(Process processes[], int n) {
+    int completed = 0;
+    int currentTime = 0;
+
+    while (completed < n) {
+        // Sort processes based on priority and arrival time
+        sortProcessesByPriority(processes, n, currentTime);
+
+        // Find the first uncompleted process that has arrived
+        int selectedProcess = -1;
+        for (int i = 0; i < n; i++) {
+            if (processes[i].arrivalTime <= currentTime && processes[i].completionTime == 0) {
+                selectedProcess = i;
+                break;
+            }
+        }
+
+        if (selectedProcess == -1) {
+            // No process available, increment the current time
+            currentTime++;
+            continue;
+        }
+
+        // Execute the selected process
+        Process* p = &processes[selectedProcess];
+        currentTime += p->burstTime;
+        p->completionTime = currentTime;
+        p->turnaroundTime = p->completionTime - p->arrivalTime;
+        p->waitingTime = p->turnaroundTime - p->burstTime;
+
+        completed++;
+    }
+}
+
+// Function to display process information
+void displayProcesses(Process processes[], int n) {
+    printf("PID\tAT\tBT\tPR\tCT\tWT\tTAT\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+               processes[i].pid,
+               processes[i].arrivalTime,
+               processes[i].burstTime,
+               processes[i].priority,
+               processes[i].completionTime,
+               processes[i].waitingTime,
+               processes[i].turnaroundTime);
+    }
+}
+
+int main() {
+    int n;
+
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+
+    Process processes[n];
+
+    for (int i = 0; i < n; i++) {
+        processes[i].pid = i + 1;
+        printf("Enter arrival time, burst time, and priority for process %d: ", i + 1);
+        scanf("%d %d %d", &processes[i].arrivalTime, &processes[i].burstTime, &processes[i].priority);
+        processes[i].completionTime = 0; // Initialize completion time to 0
+    }
+
+    priorityScheduling(processes, n);
+    displayProcesses(processes, n);
+
+    return 0;
+}
